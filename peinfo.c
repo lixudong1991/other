@@ -109,7 +109,7 @@ int main(int argc ,char **argv)
 	IMAGE_NT_HEADERS *nthead;
 	IMAGE_SECTION_HEADER *sechead,*sehead;
 	IMAGE_IMPORT_DESCRIPTOR *importtabel, temp;
-	IMAGE_THUNK_DATA *thunkdata;
+	IMAGE_THUNK_DATA *thunkdata,*firsthunck;
 	IMAGE_IMPORT_BY_NAME *funname;
 	char *filebuff = NULL;
 
@@ -123,7 +123,7 @@ int main(int argc ,char **argv)
 
 	if (argc < 2)
 	{
-		printf("输入文件\n");
+		printf("杈撳叆鏂囦欢\n");
 		return 0;
 	}
 	if ((file = fopen(argv[1], "rb")) == NULL)
@@ -142,7 +142,7 @@ int main(int argc ,char **argv)
 	if ((filebuff=malloc(filesize))==NULL||
 		(fread(filebuff, 1, filesize, file) != filesize))
 	{
-		printf("打开或读取文件失败\n");
+		printf("鎵撳紑鎴栬鍙栨枃浠跺け璐n");
 		goto retlabel;
 	}
 	fclose(file);
@@ -333,18 +333,20 @@ int main(int argc ,char **argv)
 		printf("Name: %s(rva:0x%x)\n",filebuff+getRawDataAddr(importtabel[index].Name,0,nthead,sechead),importtabel[index].Name);
 		printf("FirstThunk: 0x%x\n", importtabel[index].FirstThunk);
 		thunkdata = filebuff+ getRawDataAddr(importtabel[index].OriginalFirstThunk, 0, nthead, sechead);
+		firsthunck = importtabel[index].FirstThunk;
 		indexthunk = 0;
 		while (*(DWORD*)(thunkdata+indexthunk)!=0)
 		{
 			thunkval = *(DWORD*)(thunkdata + indexthunk);
 			if (thunkval&IMAGE_ORDINAL_FLAG32)
 			{
-				printf("function: no=0x%x\n", thunkval&0x7FFFFFFF);
+				printf("function: rva=0x%x,no=0x%x\n", firsthunck,thunkval&0x7FFFFFFF);
 			}
 			else {
 				funname = filebuff + getRawDataAddr(thunkval, 0, nthead, sechead);
-				printf("function: no=0x%x,name=%s\n", funname->Hint,funname->Name);
+				printf("function: rva=0x%x,no=0x%x,name=%s\n", firsthunck,funname->Hint,funname->Name);
 			}
+			firsthunck++;
 			indexthunk++;
 		}
 		index++;
